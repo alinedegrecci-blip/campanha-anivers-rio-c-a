@@ -1,0 +1,1180 @@
+<!DOCTYPE html>
+<html lang="pt-BR" class="h-full">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Protótipo WhatsApp - Campanha Aniversário</title>
+  
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  
+  <!-- Font Awesome Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  
+  <!-- Google Fonts Inter -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+  <style>
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    }
+
+    /* WhatsApp Wallpaper Pattern */
+    .whatsapp-bg {
+      background-color: #efeae2;
+      background-image: radial-gradient(#d5cdc1 1.2px, transparent 1.2px), radial-gradient(#d5cdc1 1.2px, #efeae2 1.2px);
+      background-size: 26px 26px;
+      background-position: 0 0, 13px 13px;
+    }
+
+    /* Speech bubble tails */
+    .tail-in {
+      position: relative;
+    }
+    .tail-in::before {
+      content: "";
+      position: absolute;
+      top: 0;
+      left: -7px;
+      width: 0;
+      height: 0;
+      border-top: 8px solid #ffffff;
+      border-left: 8px solid transparent;
+    }
+
+    .tail-out {
+      position: relative;
+    }
+    .tail-out::before {
+      content: "";
+      position: absolute;
+      top: 0;
+      right: -7px;
+      width: 0;
+      height: 0;
+      border-top: 8px solid #d9fdd3;
+      border-right: 8px solid transparent;
+    }
+
+    /* WhatsApp Native Interactive Buttons */
+    .wa-interactive-btn {
+      color: #00a884;
+      background: #ffffff;
+      border-top: 1px solid #f0f2f5;
+      font-weight: 600;
+      font-size: 12.5px;
+      padding: 10px 14px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      transition: background 0.15s ease;
+    }
+    .wa-interactive-btn:hover {
+      background: #f7f9fa;
+    }
+    .wa-interactive-btn:active {
+      background: #eaedf0;
+    }
+
+    /* Custom Scrollbar */
+    .no-scrollbar::-webkit-scrollbar {
+      display: none;
+    }
+    .no-scrollbar {
+      -ms-overflow-style: none;
+      scrollbar-width: none;
+    }
+
+    .thin-scroll::-webkit-scrollbar {
+      width: 5px;
+      height: 5px;
+    }
+    .thin-scroll::-webkit-scrollbar-thumb {
+      background: #475569;
+      border-radius: 9999px;
+    }
+
+    /* Slide Up Animation for in-device Flow */
+    @keyframes slideUpInDevice {
+      from {
+        transform: translateY(100%);
+      }
+      to {
+        transform: translateY(0);
+      }
+    }
+    .animate-flow-up {
+      animation: slideUpInDevice 0.28s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    }
+  </style>
+</head>
+
+<body class="bg-slate-950 text-slate-100 min-h-screen flex flex-col justify-between overflow-x-hidden select-none">
+
+  <!-- Top Navigation & Controls Bar -->
+  <header class="w-full bg-slate-900 border-b border-slate-800 px-4 py-3 shrink-0 flex flex-wrap items-center justify-between gap-3 shadow-md z-30">
+    <div class="flex items-center gap-3">
+      <div class="w-9 h-9 rounded-xl bg-emerald-500 flex items-center justify-center text-white font-bold shadow-md shadow-emerald-500/20">
+        <i class="fa-brands fa-whatsapp text-xl"></i>
+      </div>
+      <div>
+        <h1 class="text-sm font-bold text-white flex items-center gap-2">
+          Protótipo WhatsApp
+          <span class="text-[10px] bg-emerald-500/20 text-emerald-300 font-semibold px-2 py-0.5 rounded-full border border-emerald-500/30">
+            Campanha Aniversário
+          </span>
+        </h1>
+        <p class="text-xs text-slate-400">Jornada oficial C&A simulada com Blip Flows e Trackings</p>
+      </div>
+    </div>
+
+    <!-- Presentation & Fast Simulation Controls -->
+    <div class="flex flex-wrap items-center gap-2">
+      <!-- Dynamic Person Name Input -->
+      <div class="flex items-center bg-slate-800 border border-slate-700 rounded-xl px-2.5 py-1.5 focus-within:border-emerald-500 transition-colors">
+        <label for="personNameInput" class="text-[11px] text-slate-400 font-semibold mr-1.5 flex items-center gap-1">
+          <i class="fa-regular fa-user text-emerald-400"></i> Nome:
+        </label>
+        <input 
+          id="personNameInput" 
+          type="text" 
+          value="Camila" 
+          oninput="updatePersonName(this.value)"
+          class="bg-transparent text-xs text-white font-medium focus:outline-none w-24 sm:w-28"
+          placeholder="Ex: Camila"
+        >
+      </div>
+
+      <!-- Quick Fast Inactivity Trigger -->
+      <button 
+        onclick="triggerInactivityModal(true)" 
+        title="Disparar lembrete de inatividade de 1h30 instantaneamente" 
+        class="px-3 py-1.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 text-xs font-bold flex items-center gap-1.5 transition-all active:scale-95 shadow-md shadow-amber-500/20">
+        <i class="fa-solid fa-bolt text-xs"></i> ⚡ Inatividade Instantânea
+      </button>
+
+      <!-- Auto Demo Countdown (5s) -->
+      <button 
+        id="btnAutoTimer"
+        onclick="toggleAutoInactivityDemo()" 
+        title="Contagem regressiva de 5 segundos para demonstração ao vivo" 
+        class="px-3 py-1.5 rounded-xl bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border border-amber-500/40 text-xs font-semibold flex items-center gap-1.5 transition-all active:scale-95">
+        <i class="fa-regular fa-clock text-amber-400"></i> <span id="autoTimerLabel">Auto-Demo (5s)</span>
+      </button>
+
+      <!-- Restart Simulation -->
+      <button 
+        onclick="resetFlow()" 
+        class="px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 text-xs font-medium flex items-center gap-1.5 transition-all active:scale-95">
+        <i class="fa-solid fa-rotate-left"></i> Reiniciar
+      </button>
+    </div>
+  </header>
+
+  <main class="flex-1 w-full max-w-7xl mx-auto px-4 py-4 md:py-6 flex flex-col lg:flex-row items-center lg:items-start justify-center gap-6 overflow-hidden">
+
+    <!-- SMARTPHONE CONTAINER (WhatsApp Mockup) -->
+    <div class="w-full max-w-[395px] shrink-0">
+      <div class="relative bg-[#1a1c22] rounded-[52px] p-3 shadow-2xl border-[5px] border-slate-750 ring-1 ring-slate-700/80">
+        
+        <!-- Screen Body -->
+        <div class="relative bg-white rounded-[42px] overflow-hidden flex flex-col h-[680px] shadow-inner">
+          
+          <!-- iOS Status Bar & Dynamic Island -->
+          <div class="bg-[#008069] text-white pt-2.5 px-6 pb-1 flex justify-between items-center z-20 shrink-0 select-none">
+            <span class="text-xs font-semibold tracking-tight" id="clockElement">09:41</span>
+            
+            <div class="w-20 h-4 bg-black rounded-full mx-auto -mt-1 shadow-sm"></div>
+
+            <div class="flex items-center gap-1.5 text-xs">
+              <i class="fa-solid fa-signal text-[10px]"></i>
+              <i class="fa-solid fa-wifi text-[10px]"></i>
+              <i class="fa-solid fa-battery-full text-xs"></i>
+            </div>
+          </div>
+
+          <!-- WhatsApp Chat Header -->
+          <div class="bg-[#008069] text-white px-3.5 py-2.5 flex items-center justify-between shadow-md z-20 shrink-0">
+            <div class="flex items-center gap-2.5">
+              <button onclick="resetFlow()" class="text-white hover:opacity-80 transition-opacity p-0.5 -ml-1">
+                <i class="fa-solid fa-arrow-left text-sm"></i>
+              </button>
+              
+              <!-- Brand Avatar -->
+              <div class="relative">
+                <div class="w-9 h-9 rounded-full bg-white flex items-center justify-center text-[#008069] font-black text-sm shadow-sm border border-emerald-300">
+                  C&A
+                </div>
+                <span class="absolute bottom-0 right-0 w-2.5 h-2.5 bg-emerald-400 border-2 border-[#008069] rounded-full"></span>
+              </div>
+
+              <!-- Profile Info -->
+              <div class="flex flex-col leading-tight">
+                <div class="flex items-center gap-1">
+                  <span class="font-semibold text-xs tracking-tight text-white">C&A Brasil</span>
+                  <i class="fa-solid fa-circle-check text-[11px] text-emerald-200" title="Conta Comercial Oficial Verificada"></i>
+                </div>
+                <span class="text-[10px] text-emerald-100 flex items-center gap-1 font-normal">
+                  <span class="w-1.5 h-1.5 rounded-full bg-emerald-300 inline-block animate-pulse"></span>
+                  online agora
+                </span>
+              </div>
+            </div>
+
+            <!-- Action Icons -->
+            <div class="flex items-center gap-4 text-emerald-100 pr-1">
+              <i class="fa-solid fa-video text-xs cursor-pointer hover:text-white"></i>
+              <i class="fa-solid fa-phone text-xs cursor-pointer hover:text-white"></i>
+              <i class="fa-solid fa-ellipsis-vertical text-xs cursor-pointer hover:text-white"></i>
+            </div>
+          </div>
+
+          <!-- Messages Scrollable Body -->
+          <div id="messagesList" class="whatsapp-bg flex-1 p-3.5 space-y-3.5 overflow-y-auto thin-scroll relative">
+            <!-- Messages inserted dynamically via JS -->
+          </div>
+
+          <!-- Typing Indicator -->
+          <div id="typingIndicator" class="hidden whatsapp-bg px-4 py-1.5 z-10 shrink-0">
+            <div class="inline-flex items-center gap-1.5 bg-white px-3 py-1.5 rounded-full shadow-sm">
+              <span class="text-[10px] text-slate-500 font-medium">C&A digitando</span>
+              <span class="w-1.5 h-1.5 bg-[#008069] rounded-full animate-bounce"></span>
+              <span class="w-1.5 h-1.5 bg-[#008069] rounded-full animate-bounce [animation-delay:0.2s]"></span>
+              <span class="w-1.5 h-1.5 bg-[#008069] rounded-full animate-bounce [animation-delay:0.4s]"></span>
+            </div>
+          </div>
+
+          <!-- WhatsApp Input Footer -->
+          <div class="bg-[#f0f2f5] px-2.5 py-2 flex items-center gap-2 border-t border-slate-200 shrink-0">
+            <button class="text-slate-500 hover:text-slate-700 p-1"><i class="fa-regular fa-face-smile text-lg"></i></button>
+            <button class="text-slate-500 hover:text-slate-700 p-1"><i class="fa-solid fa-paperclip text-lg"></i></button>
+            
+            <div class="flex-1 bg-white rounded-2xl px-3 py-1.5 border border-slate-200 text-xs text-slate-400 flex items-center justify-between">
+              <span>Mensagem</span>
+              <i class="fa-solid fa-camera text-slate-400"></i>
+            </div>
+
+            <div class="w-8 h-8 rounded-full bg-[#008069] text-white flex items-center justify-center shadow-sm">
+              <i class="fa-solid fa-microphone text-xs"></i>
+            </div>
+          </div>
+
+          <!-- iOS Bottom Indicator -->
+          <div class="bg-[#f0f2f5] pb-1.5 pt-0.5 flex justify-center shrink-0">
+            <div class="w-32 h-1 bg-slate-400 rounded-full"></div>
+          </div>
+
+          <!-- IN-DEVICE WHATSAPP FLOW BOTTOM SHEET (Native Flow View) -->
+          <div id="phoneFlowSheet" class="hidden absolute inset-0 z-40 bg-black/40 flex flex-col justify-end transition-all">
+            <div class="w-full bg-white rounded-t-[28px] shadow-2xl flex flex-col max-h-[86%] overflow-hidden animate-flow-up">
+              
+              <!-- Flow Top Handle & Header -->
+              <div class="bg-[#f7f8fa] border-b border-slate-200 px-4 pt-2.5 pb-3 shrink-0">
+                <div class="w-10 h-1 bg-slate-300 rounded-full mx-auto mb-2"></div>
+                
+                <div class="flex items-center justify-between">
+                  <div class="flex items-center gap-2">
+                    <button id="flowBackBtn" onclick="prevFlowScreen()" class="hidden text-slate-600 hover:text-slate-900 p-1 -ml-1">
+                      <i class="fa-solid fa-chevron-left text-xs"></i>
+                    </button>
+                    <div>
+                      <div class="flex items-center gap-1.5">
+                        <i class="fa-brands fa-whatsapp text-emerald-600 text-xs"></i>
+                        <h3 class="text-xs font-bold text-slate-900 leading-none">Looks</h3>
+                      </div>
+                      <span class="text-[10px] text-slate-400 leading-none">C&A Brasil • WhatsApp Flow</span>
+                    </div>
+                  </div>
+
+                  <div class="flex items-center gap-2">
+                    <span id="flowStepBadge" class="text-[10px] bg-slate-200/80 text-slate-700 font-semibold px-2 py-0.5 rounded-full">
+                      1 de 3
+                    </span>
+                    <button onclick="closeFlowSheet()" class="text-slate-400 hover:text-slate-700 p-1">
+                      <i class="fa-solid fa-xmark text-sm"></i>
+                    </button>
+                  </div>
+                </div>
+
+                <!-- Step Progress Bar -->
+                <div class="w-full bg-slate-200 h-1 rounded-full mt-2.5 overflow-hidden">
+                  <div id="flowProgressBar" class="bg-[#008069] h-full w-1/3 transition-all duration-300"></div>
+                </div>
+              </div>
+
+              <!-- Flow Screen Body -->
+              <div class="p-4 overflow-y-auto thin-scroll flex-1 text-slate-800" id="flowSheetBody">
+                <!-- Dynamically rendered per screen -->
+              </div>
+
+              <!-- Flow Sticky Footer Button -->
+              <div class="p-3.5 bg-white border-t border-slate-100 flex items-center gap-2 shrink-0">
+                <button 
+                  id="flowNextBtn"
+                  onclick="nextFlowScreen()" 
+                  class="w-full py-2.5 bg-[#008069] hover:bg-[#00705c] active:bg-[#005c4b] text-white font-bold text-xs rounded-xl shadow-md transition-all flex items-center justify-center gap-2">
+                  <span id="flowNextBtnLabel">Avançar</span>
+                  <i id="flowNextBtnIcon" class="fa-solid fa-arrow-right text-[10px]"></i>
+                </button>
+              </div>
+
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </div>
+
+    <div class="flex-1 w-full max-w-xl bg-slate-900 border border-slate-800 rounded-3xl p-4 lg:p-5 flex flex-col h-full max-h-[680px] shadow-xl">
+      
+      <!-- Panel Header -->
+      <div class="flex items-center justify-between pb-3 border-b border-slate-800 shrink-0">
+        <div>
+          <h2 class="text-sm font-bold text-white flex items-center gap-2">
+            <i class="fa-solid fa-chart-line text-emerald-400"></i>
+            Console de Trackings & Analytics (Blip)
+          </h2>
+          <p class="text-[11px] text-slate-400">Eventos disparados em tempo real de acordo com as ações do usuário</p>
+        </div>
+        <button 
+          onclick="clearTrackingLogs()" 
+          class="text-[11px] text-slate-400 hover:text-slate-200 bg-slate-800 px-2.5 py-1 rounded-lg border border-slate-700 transition-colors">
+          Limpar Log
+        </button>
+      </div>
+
+      <!-- State Information Bar -->
+      <div class="grid grid-cols-2 sm:grid-cols-3 gap-2 my-3 shrink-0">
+        <div class="bg-slate-800/80 p-2.5 rounded-xl border border-slate-700/60">
+          <span class="text-[10px] uppercase font-bold text-slate-400 block">Cliente ({{nome}})</span>
+          <span id="labelStateUser" class="text-xs font-semibold text-emerald-400 truncate block">Camila</span>
+        </div>
+        <div class="bg-slate-800/80 p-2.5 rounded-xl border border-slate-700/60">
+          <span class="text-[10px] uppercase font-bold text-slate-400 block">Fluxo / Estado Ativo</span>
+          <span id="labelStateFlow" class="text-xs font-semibold text-sky-400 truncate block">Aguardando Escolha</span>
+        </div>
+        <div class="bg-slate-800/80 p-2.5 rounded-xl border border-slate-700/60 col-span-2 sm:col-span-1">
+          <span class="text-[10px] uppercase font-bold text-slate-400 block">Total de Eventos</span>
+          <span id="labelStateCount" class="text-xs font-bold text-amber-400">0</span>
+        </div>
+      </div>
+
+      <!-- Tracking Events List -->
+      <div class="flex-1 overflow-y-auto thin-scroll pr-1 space-y-2.5 min-h-[260px]" id="trackingConsole">
+        <!-- Event cards will be appended here -->
+      </div>
+
+      <!-- Panel Footer Information -->
+      <div class="pt-3 mt-3 border-t border-slate-800 text-[11px] text-slate-400 flex items-center justify-between shrink-0">
+        <span class="flex items-center gap-1.5">
+          <span class="w-2 h-2 rounded-full bg-emerald-400"></span>
+          Blip TrackEvent Conectado
+        </span>
+        <span class="text-[10px] text-slate-500">Sem Push / Sem Cupons</span>
+      </div>
+
+    </div>
+
+  </main>
+
+  <script>
+    /* State variables */
+    let customerName = 'Camila';
+    let currentGender = 'feminina';
+    let currentFlowScreen = 0;
+    let selectedVibe = '🎉 Festa com a galera';
+    let selectedPiece = '👗 Vestido';
+    let trackingEventsList = [];
+    let autoDemoInterval = null;
+    let autoDemoSeconds = 5;
+
+    /* 3 Women's Looks & 3 Men's Pieces catalogs */
+    const looksCatalog = {
+      feminina: [
+        {
+          id: 'fem-1',
+          title: 'Vestido Midi Festa Brilho',
+          tag: '🎉 Estrela da Noite',
+          description: 'Decote fluido e tecido acetinado com caimento impecável para brilhar no seu dia.',
+          price: 'R$ 219,99',
+          image: 'https://images.unsplash.com/photo-1595777457583-95e059d581b8?w=500&auto=format&fit=crop&q=80'
+        },
+        {
+          id: 'fem-2',
+          title: 'Conjunto Alfaiataria Chic',
+          tag: '🥂 Elegância Pura',
+          description: 'Blazer estruturado com calça reta cintura alta, versátil e super sofisticado.',
+          price: 'R$ 279,90',
+          image: 'https://images.unsplash.com/photo-1584273143981-41c073dfe8f8?w=500&auto=format&fit=crop&q=80'
+        },
+        {
+          id: 'fem-3',
+          title: 'Macacão Pantalona Glamour',
+          tag: '✨ Conforto & Impacto',
+          description: 'Corte moderno com faixa na cintura, ideal para qualquer festa ou jantar especial.',
+          price: 'R$ 249,90',
+          image: 'https://images.unsplash.com/photo-1515372039744-b8f02a3ae446?w=500&auto=format&fit=crop&q=80'
+        }
+      ],
+      masculina: [
+        {
+          id: 'masc-1',
+          title: 'Camisa Linho Manga Longa',
+          tag: '🥂 Clássico & Fresco',
+          description: 'Linho premium em tom neutro, corte impecável para comemorações especiais.',
+          price: 'R$ 189,90',
+          image: 'https://images.unsplash.com/photo-1602810318383-e386cc2a3ccf?w=500&auto=format&fit=crop&q=80'
+        },
+        {
+          id: 'masc-2',
+          title: 'Jaqueta Bomber Urbana',
+          tag: '🎉 Estilo Despojado',
+          description: 'Design contemporâneo com acabamento fosco, perfeito para festa com a galera.',
+          price: 'R$ 259,90',
+          image: 'https://images.unsplash.com/photo-1551028719-00167b16eac5?w=500&auto=format&fit=crop&q=80'
+        },
+        {
+          id: 'masc-3',
+          title: 'Calça Chino Slim Comfort',
+          tag: '✨ Versatilidade Total',
+          description: 'Algodão com elastano de toque macio, fecha qualquer combinação com maestria.',
+          price: 'R$ 179,90',
+          image: 'https://images.unsplash.com/photo-1624378439575-d8705ad7ae80?w=500&auto=format&fit=crop&q=80'
+        }
+      ]
+    };
+
+    /* Exact screens defined in the JSON file */
+    const flowDefinitions = {
+      feminina: {
+        screens: [
+          {
+            id: 'screen-mtvy42kq-ika1rn-12',
+            title: 'Qual é o clima da comemoração? 🎉',
+            subtitle: 'Selecione a opção que melhor descreve onde você vai comemorar o seu dia especial.',
+            fields: [
+              "🎉 Festa com a galera",
+              "🥂 Jantar especial",
+              "🧳 Passeio ou viagem",
+              "😌 Algo mais tranquilo"
+            ]
+          },
+          {
+            id: 'screen-mtw3q2ca-yfnme6-5',
+            title: 'Agora, qual peça vai dar o tom do seu look? ✨',
+            subtitle: 'Escolha o estilo ou a peça-chave que você mais quer usar na sua celebração.',
+            fields: [
+              "👗 Vestido",
+              "✨ Alfaiataria",
+              "👖 Jeans",
+              "🎁 Me surpreenda"
+            ]
+          },
+          {
+            id: 'screen-mtw3ucz5-gsqriv-13',
+            title: 'Temos um match! ✨ Suas escolhas já deram a pista do que procurar. Agora vem a melhor parte: encontrar o seu look.',
+            subtitle: 'Preparamos uma seleção exclusiva sob medida com base nas suas preferências.',
+            fields: []
+          }
+        ]
+      },
+      masculina: {
+        screens: [
+          {
+            id: 'screen-mtvy42kq-ika1rn-12',
+            title: 'Qual é o clima da comemoração?',
+            subtitle: 'Conta pra gente qual será a programação para indicarmos o visual ideal.',
+            fields: [
+              "🎉 Festa com a galera",
+              "🥂 Jantar especial",
+              "🧳 Passeio ou viagem",
+              "😌 Algo mais tranquilo"
+            ]
+          },
+          {
+            id: 'screen-mtw3q2ca-yfnme6-5',
+            title: 'E pro look ficar completo, o que não pode faltar?',
+            subtitle: 'Selecione a peça principal para montarmos a melhor combinação para você.',
+            fields: [
+              "👕 Camisa e camiseta",
+              "👖 Jeans e calças",
+              "🩳 Bermuda",
+              "✨ Calçados e acessórios",
+              "🎁 Me surpreenda"
+            ]
+          },
+          {
+            id: 'screen-mtw3ucz5-gsqriv-13',
+            title: 'Tudo certo! Agora vem a melhor parte: conhecer os looks que têm tudo a ver com a comemoração.',
+            subtitle: 'Separamos sugestões certeiras com conforto e muito estilo para o seu momento.',
+            fields: []
+          }
+        ]
+      }
+    };
+
+    function escapeHtml(text) {
+      const div = document.createElement('div');
+      div.innerText = text || '';
+      return div.innerHTML;
+    }
+
+    function scrollToBottom() {
+      const container = document.getElementById('messagesList');
+      if (container) {
+        container.scrollTop = container.scrollHeight;
+      }
+    }
+
+    function showTyping(show) {
+      const el = document.getElementById('typingIndicator');
+      if (el) {
+        el.classList.toggle('hidden', !show);
+        if (show) scrollToBottom();
+      }
+    }
+
+    function appendBotMessage(innerHtml, isFirstInGroup = true) {
+      const list = document.getElementById('messagesList');
+      const timeStr = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+      
+      const wrapper = document.createElement('div');
+      wrapper.className = "flex flex-col items-start max-w-[88%] transition-all";
+
+      wrapper.innerHTML = `
+        <div class="bg-white rounded-2xl rounded-tl-sm text-slate-800 text-xs shadow-sm border border-slate-150 overflow-hidden ${isFirstInGroup ? 'tail-in' : ''}">
+          <div class="p-3">
+            ${innerHtml}
+            <div class="flex items-center justify-end gap-1 mt-1.5">
+              <span class="text-[9px] text-slate-400">${timeStr}</span>
+            </div>
+          </div>
+        </div>
+      `;
+
+      list.appendChild(wrapper);
+      scrollToBottom();
+    }
+
+    function appendInteractiveButtonsBotMessage(innerHtml, buttonsHtml) {
+      const list = document.getElementById('messagesList');
+      const timeStr = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+      
+      const wrapper = document.createElement('div');
+      wrapper.className = "flex flex-col items-start max-w-[88%] transition-all";
+
+      wrapper.innerHTML = `
+        <div class="bg-white rounded-2xl rounded-tl-sm text-slate-800 text-xs shadow-sm border border-slate-150 overflow-hidden tail-in w-full">
+          <div class="p-3">
+            ${innerHtml}
+            <div class="flex items-center justify-end gap-1 mt-1.5">
+              <span class="text-[9px] text-slate-400">${timeStr}</span>
+            </div>
+          </div>
+          <div class="flex flex-col divide-y divide-slate-100 border-t border-slate-100">
+            ${buttonsHtml}
+          </div>
+        </div>
+      `;
+
+      list.appendChild(wrapper);
+      scrollToBottom();
+    }
+
+    function appendUserMessage(text) {
+      const list = document.getElementById('messagesList');
+      const timeStr = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
+      const wrapper = document.createElement('div');
+      wrapper.className = "flex flex-col items-end self-end max-w-[82%] ml-auto transition-all";
+
+      wrapper.innerHTML = `
+        <div class="bg-[#d9fdd3] rounded-2xl rounded-tr-sm px-3.5 py-2 text-slate-900 text-xs shadow-sm tail-out">
+          <p class="leading-relaxed whitespace-pre-line">${escapeHtml(text)}</p>
+          <div class="flex items-center justify-end gap-1 mt-0.5">
+            <span class="text-[9px] text-emerald-800/70">${timeStr}</span>
+            <i class="fa-solid fa-check-double text-[10px] text-sky-500"></i>
+          </div>
+        </div>
+      `;
+
+      list.appendChild(wrapper);
+      scrollToBottom();
+    }
+
+    function recordTracking(category, action, extra = '') {
+      const time = new Date().toLocaleTimeString();
+      const eventObj = { category, action, extra, time };
+      trackingEventsList.unshift(eventObj);
+      renderTrackingPanel();
+    }
+
+    function renderTrackingPanel() {
+      const consoleEl = document.getElementById('trackingConsole');
+      const countEl = document.getElementById('labelStateCount');
+      if (countEl) countEl.innerText = trackingEventsList.length;
+
+      if (!consoleEl) return;
+
+      if (trackingEventsList.length === 0) {
+        consoleEl.innerHTML = `
+          <div class="h-full flex flex-col items-center justify-center text-center p-6 text-slate-500">
+            <i class="fa-regular fa-folder-open text-2xl mb-2 text-slate-600"></i>
+            <p class="text-xs">Nenhum evento registrado ainda.</p>
+            <p class="text-[10px] text-slate-600">Inicie o fluxo no smartphone para ver os trackings disparados.</p>
+          </div>
+        `;
+        return;
+      }
+
+      consoleEl.innerHTML = trackingEventsList.map((ev) => `
+        <div class="bg-slate-800/90 border border-slate-700/80 rounded-xl p-2.5 transition-all hover:border-emerald-500/50">
+          <div class="flex items-center justify-between text-[10px] mb-1">
+            <span class="font-bold text-emerald-400 bg-emerald-500/10 px-1.5 py-0.5 rounded flex items-center gap-1">
+              <i class="fa-solid fa-tag text-[8px]"></i> TrackEvent
+            </span>
+            <span class="text-slate-400">${ev.time}</span>
+          </div>
+          <div class="text-xs font-semibold text-white truncate" title="${escapeHtml(ev.category)}">
+            ${escapeHtml(ev.category)}
+          </div>
+          <div class="text-[11px] text-slate-300 font-mono mt-0.5 flex items-center gap-1">
+            <i class="fa-solid fa-play text-[8px] text-sky-400"></i>
+            Ação: <span class="text-amber-300 font-semibold">${escapeHtml(ev.action)}</span>
+          </div>
+          ${ev.extra ? `<div class="text-[10px] text-slate-400 mt-1 border-t border-slate-700/50 pt-1">${escapeHtml(ev.extra)}</div>` : ''}
+        </div>
+      `).join('');
+    }
+
+    function clearTrackingLogs() {
+      trackingEventsList = [];
+      renderTrackingPanel();
+    }
+
+    function updatePersonName(name) {
+      customerName = name.trim() || 'Camila';
+      const label = document.getElementById('labelStateUser');
+      if (label) label.innerText = customerName;
+    }
+
+    function startConversation() {
+      const list = document.getElementById('messagesList');
+      list.innerHTML = '';
+      
+      const labelFlow = document.getElementById('labelStateFlow');
+      if (labelFlow) labelFlow.innerText = 'ROUT.1.0.0 NA - Niver V2';
+
+      const dateBadge = document.createElement('div');
+      dateBadge.className = "flex justify-center my-1";
+      dateBadge.innerHTML = `
+        <span class="bg-white/80 text-slate-600 text-[10px] font-semibold px-2.5 py-0.5 rounded-full shadow-xs border border-slate-200">
+          Hoje
+        </span>
+      `;
+      list.appendChild(dateBadge);
+
+      // Blip tracking action for entry
+      recordTracking(
+        'Cea na campanha quiz aniversario exibicao',
+        'Exibicao',
+        `state: na-niver-v2-266 | Cliente: ${customerName}`
+      );
+
+      showTyping(true);
+
+      setTimeout(() => {
+        showTyping(false);
+
+        /* Distinct vertical paragraph spacing for initial message */
+        const msgBodyHtml = `
+          <div class="space-y-2.5 text-xs text-slate-800 leading-relaxed">
+            <p><b>Contagem regressiva para o seu aniversário, ${escapeHtml(customerName)}. 🎉</b></p>
+            <p>Já pode começar a pensar no presente... <b>inclusive naquele de você para você.</b> 👀 🎁</p>
+            <p>Bora encontrar um look pra comemorar?</p>
+          </div>
+        `;
+
+        const buttonsHtml = `
+          <button onclick="handleGenderChoice('feminina')" class="wa-interactive-btn">
+            <i class="fa-solid fa-vest-patches text-xs text-emerald-600"></i>
+            <span>Looks femininos</span>
+          </button>
+          <button onclick="handleGenderChoice('masculina')" class="wa-interactive-btn">
+            <i class="fa-solid fa-shirt text-xs text-emerald-600"></i>
+            <span>Looks masculinos</span>
+          </button>
+        `;
+
+        appendInteractiveButtonsBotMessage(msgBodyHtml, buttonsHtml);
+      }, 400);
+    }
+
+    function handleGenderChoice(gender) {
+      currentGender = gender;
+      const isFem = gender === 'feminina';
+      const choiceTitle = isFem ? 'Looks femininos' : 'Looks masculinos';
+      
+      const labelFlow = document.getElementById('labelStateFlow');
+      if (labelFlow) labelFlow.innerText = isFem ? 'CA.1.0.1 Moda feminina' : 'CA.1.1.0 Moda masculina';
+
+      appendUserMessage(choiceTitle);
+
+      recordTracking(
+        'Cea na campanha quiz aniversario selecao',
+        choiceTitle,
+        `state: ${isFem ? 'moda-feminina-267' : 'moda-masculina-268'}`
+      );
+
+      showTyping(true);
+
+      setTimeout(() => {
+        showTyping(false);
+
+        /* Exact JSON message texts with clear paragraph spacing */
+        const inviteText = isFem 
+          ? `<div class="space-y-2 text-xs text-slate-800 leading-relaxed">
+               <p>Amei que topou! 💌</p>
+               <p>Agora me conta: onde você quer estrear esse look?</p>
+             </div>`
+          : `<div class="space-y-2 text-xs text-slate-800 leading-relaxed">
+               <p>Boa! 🎯</p>
+               <p>Agora vamos pensar no seu grande dia: qual será a programação?</p>
+             </div>`;
+
+        /* Native WhatsApp Flow Card layout */
+        const flowCardHtml = `
+          <div>
+            ${inviteText}
+
+            <div class="mt-2.5 pt-2.5 border-t border-slate-150">
+              <div class="bg-slate-50 border border-slate-200 rounded-xl p-2.5 mb-2 flex items-center justify-between">
+                <div class="flex items-center gap-2">
+                  <div class="w-7 h-7 rounded-lg bg-[#008069] text-white flex items-center justify-center text-xs shadow-xs">
+                    <i class="fa-solid fa-sparkles"></i>
+                  </div>
+                  <div>
+                    <h4 class="text-xs font-bold text-slate-900 leading-none">Looks</h4>
+                    <p class="text-[10px] text-slate-500 mt-0.5">Quiz Interativo C&A</p>
+                  </div>
+                </div>
+                <span class="text-[9px] bg-emerald-100 text-emerald-800 font-semibold px-2 py-0.5 rounded-full">
+                  3 telas
+                </span>
+              </div>
+
+              <button 
+                onclick="openFlowSheet()" 
+                class="w-full py-2 bg-[#008069] hover:bg-[#00705c] active:bg-[#005c4b] text-white font-bold text-xs rounded-xl shadow-sm transition-all flex items-center justify-center gap-1.5">
+                <i class="fa-solid fa-list-check text-[11px]"></i>
+                <span>Descobrir meus looks</span>
+              </button>
+            </div>
+          </div>
+        `;
+
+        appendBotMessage(flowCardHtml);
+      }, 450);
+    }
+
+    function openFlowSheet() {
+      currentFlowScreen = 0;
+      renderFlowSheetScreen();
+      document.getElementById('phoneFlowSheet').classList.remove('hidden');
+    }
+
+    function closeFlowSheet() {
+      document.getElementById('phoneFlowSheet').classList.add('hidden');
+    }
+
+    function prevFlowScreen() {
+      if (currentFlowScreen > 0) {
+        currentFlowScreen--;
+        renderFlowSheetScreen();
+      }
+    }
+
+    function nextFlowScreen() {
+      const screens = flowDefinitions[currentGender].screens;
+
+      if (currentFlowScreen === 0) {
+        const checked = document.querySelector('input[name="flowScreenOption"]:checked');
+        if (checked) selectedVibe = checked.value;
+      } else if (currentFlowScreen === 1) {
+        const checked = document.querySelector('input[name="flowScreenOption"]:checked');
+        if (checked) selectedPiece = checked.value;
+      }
+
+      if (currentFlowScreen < screens.length - 1) {
+        currentFlowScreen++;
+        renderFlowSheetScreen();
+      } else {
+        submitFlowSheet();
+      }
+    }
+
+    function renderFlowSheetScreen() {
+      const screens = flowDefinitions[currentGender].screens;
+      const screen = screens[currentFlowScreen];
+      const total = screens.length;
+
+      // Update Step Badge & Progress
+      const badge = document.getElementById('flowStepBadge');
+      if (badge) badge.innerText = `${currentFlowScreen + 1} de ${total}`;
+
+      const progress = document.getElementById('flowProgressBar');
+      if (progress) {
+        progress.style.width = `${((currentFlowScreen + 1) / total) * 100}%`;
+      }
+
+      const backBtn = document.getElementById('flowBackBtn');
+      if (backBtn) {
+        backBtn.classList.toggle('hidden', currentFlowScreen === 0);
+      }
+
+      const nextBtnLabel = document.getElementById('flowNextBtnLabel');
+      const nextBtnIcon = document.getElementById('flowNextBtnIcon');
+      
+      if (currentFlowScreen === total - 1) {
+        nextBtnLabel.innerText = "Ver Meus Looks";
+        nextBtnIcon.className = "fa-solid fa-check text-[10px]";
+      } else {
+        nextBtnLabel.innerText = "Avançar";
+        nextBtnIcon.className = "fa-solid fa-arrow-right text-[10px]";
+      }
+
+      const bodyEl = document.getElementById('flowSheetBody');
+
+      // Screens 0 and 1: Questions with radio list
+      if (currentFlowScreen === 0 || currentFlowScreen === 1) {
+        const currentSelected = currentFlowScreen === 0 ? selectedVibe : selectedPiece;
+
+        bodyEl.innerHTML = `
+          <div class="space-y-3">
+            <div class="flex items-center gap-1.5">
+              <span class="text-[10px] font-bold uppercase tracking-wider text-emerald-800 bg-emerald-100 px-2 py-0.5 rounded-md">
+                Etapa ${currentFlowScreen + 1}
+              </span>
+            </div>
+
+            <div>
+              <h4 class="text-sm font-bold text-slate-900 leading-snug">
+                ${escapeHtml(screen.title)}
+              </h4>
+              ${screen.subtitle ? `<p class="text-[11px] text-slate-500 mt-1 leading-relaxed">${escapeHtml(screen.subtitle)}</p>` : ''}
+            </div>
+
+            <div class="space-y-2 pt-1">
+              ${screen.fields.map((field) => `
+                <label class="flex items-center justify-between p-3 rounded-xl border border-slate-200 hover:border-emerald-500 cursor-pointer bg-white transition-all ${field === currentSelected ? 'border-emerald-500 bg-emerald-50/50 shadow-xs' : ''}">
+                  <span class="text-xs font-medium text-slate-800 leading-snug">${escapeHtml(field)}</span>
+                  <input 
+                    type="radio" 
+                    name="flowScreenOption" 
+                    value="${escapeHtml(field)}" 
+                    ${field === currentSelected ? 'checked' : ''} 
+                    class="w-4 h-4 text-[#008069] focus:ring-[#008069] accent-[#008069] cursor-pointer"
+                  >
+                </label>
+              `).join('')}
+            </div>
+          </div>
+        `;
+      } 
+      // Screen 2: Match screen
+      else {
+        bodyEl.innerHTML = `
+          <div class="space-y-3 text-center py-2 flex flex-col items-center">
+            <div class="w-12 h-12 rounded-full bg-emerald-100 text-[#008069] flex items-center justify-center text-xl shadow-inner animate-bounce">
+              <i class="fa-solid fa-wand-magic-sparkles"></i>
+            </div>
+
+            <div class="space-y-1 px-1">
+              <span class="text-[10px] font-bold uppercase tracking-wider text-emerald-800 bg-emerald-100 px-2 py-0.5 rounded-full">
+                Match Perfeito
+              </span>
+              <p class="text-xs font-semibold text-slate-800 leading-relaxed pt-1">
+                ${escapeHtml(screen.title)}
+              </p>
+              ${screen.subtitle ? `<p class="text-[11px] text-slate-500 leading-relaxed pt-1">${escapeHtml(screen.subtitle)}</p>` : ''}
+            </div>
+
+            <div class="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-left text-xs space-y-1.5 mt-1">
+              <span class="text-[10px] text-slate-400 uppercase font-bold tracking-wider block">Suas Preferências:</span>
+              <div class="text-slate-800 font-medium flex items-center gap-2">
+                <i class="fa-solid fa-check text-[#008069] text-xs"></i> <span>${escapeHtml(selectedVibe)}</span>
+              </div>
+              <div class="text-slate-800 font-medium flex items-center gap-2">
+                <i class="fa-solid fa-check text-[#008069] text-xs"></i> <span>${escapeHtml(selectedPiece)}</span>
+              </div>
+            </div>
+          </div>
+        `;
+      }
+    }
+
+    function submitFlowSheet() {
+      closeFlowSheet();
+
+      appendUserMessage(`Respostas enviadas no quiz:\n• Clima: ${selectedVibe}\n• Peça: ${selectedPiece}`);
+
+      recordTracking(
+        'Cea na campanha quiz aniversario selecao',
+        `${selectedVibe} + ${selectedPiece}`,
+        `flowResponse: ${currentGender}`
+      );
+
+      showTyping(true);
+
+      setTimeout(() => {
+        showTyping(false);
+        renderSelectionConfirmation();
+      }, 500);
+    }
+
+    function renderSelectionConfirmation() {
+      const isFem = currentGender === 'feminina';
+      const labelFlow = document.getElementById('labelStateFlow');
+      if (labelFlow) labelFlow.innerText = isFem ? 'CA.1.0.2 Selecao' : 'CA.1.1.1 Selecao';
+
+      const introHtml = `
+        <div class="space-y-2 text-xs text-slate-800 leading-relaxed">
+          <p class="font-bold text-slate-900">✨ Looks Selecionados Para Você</p>
+          <p>Separamos uma vitrine exclusiva com as peças que mais combinam com a sua comemoração!</p>
+        </div>
+      `;
+
+      appendBotMessage(introHtml);
+
+      showTyping(true);
+      setTimeout(() => {
+        showTyping(false);
+        renderProductCarousel();
+      }, 450);
+    }
+
+    function renderProductCarousel() {
+      const isFem = currentGender === 'feminina';
+      const items = looksCatalog[currentGender];
+
+      const labelFlow = document.getElementById('labelStateFlow');
+      if (labelFlow) labelFlow.innerText = isFem ? 'CA.1.0.3 Carrossel - moda fem' : 'CA.1.1.2 Carrossel - moda masc';
+
+      recordTracking(
+        'Cea na campanha quiz aniversario exibicao carrossel',
+        `Carrossel de 3 ${isFem ? 'looks femininos' : 'peças masculinas'}`,
+        `Filtros: ${selectedVibe} / ${selectedPiece}`
+      );
+
+      const carouselHtml = `
+        <div class="space-y-2">
+          <div class="flex items-center justify-between pb-1">
+            <span class="text-[10px] font-bold uppercase tracking-wider text-emerald-800 bg-emerald-100 px-2 py-0.5 rounded-full">
+              3 ${isFem ? 'Looks Femininos' : 'Peças Masculinas'}
+            </span>
+            <span class="text-[10px] text-slate-400 flex items-center gap-1">
+              deslize <i class="fa-solid fa-arrows-left-right text-[8px]"></i>
+            </span>
+          </div>
+
+          <div class="flex gap-2.5 overflow-x-auto pb-2 no-scrollbar scroll-smooth -mx-1 px-1">
+            ${items.map(item => `
+              <div class="w-[200px] shrink-0 bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-sm flex flex-col justify-between">
+                <div>
+                  <div class="relative h-32 w-full overflow-hidden bg-slate-100">
+                    <img 
+                      src="${item.image}" 
+                      alt="${item.title}" 
+                      class="w-full h-full object-cover object-top hover:scale-105 transition-transform duration-300"
+                      loading="lazy"
+                    >
+                    <span class="absolute top-1.5 left-1.5 bg-black/70 text-white text-[9px] font-semibold px-2 py-0.5 rounded-md">
+                      ${item.tag}
+                    </span>
+                  </div>
+                  <div class="p-2.5">
+                    <h4 class="font-bold text-slate-900 text-xs leading-tight mb-1 truncate" title="${item.title}">
+                      ${item.title}
+                    </h4>
+                    <p class="text-[10px] text-slate-500 line-clamp-2 leading-relaxed mb-2">
+                      ${item.description}
+                    </p>
+                    <span class="text-xs font-black text-[#008069]">
+                      ${item.price}
+                    </span>
+                  </div>
+                </div>
+                <div class="p-2 pt-0">
+                  <button 
+                    onclick="handleProductClick('${escapeHtml(item.title)}', '${item.price}')"
+                    class="w-full py-1.5 bg-emerald-50 hover:bg-emerald-100 text-[#008069] border border-emerald-300 font-bold text-[11px] rounded-xl transition-all flex items-center justify-center gap-1 active:scale-98">
+                    <i class="fa-solid fa-eye text-[10px]"></i> Ver detalhes
+                  </button>
+                </div>
+              </div>
+            `).join('')}
+          </div>
+        </div>
+      `;
+
+      appendBotMessage(carouselHtml);
+    }
+
+    function handleProductClick(productTitle, price) {
+      appendUserMessage(`Quero ver detalhes: ${productTitle}`);
+      
+      recordTracking(
+        'Cea na campanha quiz aniversario clique produto',
+        productTitle,
+        `Preço: ${price} | Origem: Carrossel ${currentGender}`
+      );
+
+      showTyping(true);
+      setTimeout(() => {
+        showTyping(false);
+        appendBotMessage(`
+          <div class="space-y-1.5 text-xs">
+            <p class="font-bold text-slate-900">Perfeita escolha, ${escapeHtml(customerName)}! 🛍️</p>
+            <p class="text-slate-600 leading-relaxed">
+              Você selecionou o look <b>${productTitle}</b>. Prepare-se para arrasar e comemorar o seu aniversário em grande estilo!
+            </p>
+          </div>
+        `);
+      }, 400);
+    }
+
+    function triggerInactivityModal(instant = false) {
+      clearInterval(autoDemoInterval);
+      resetAutoTimerButton();
+
+      const list = document.getElementById('messagesList');
+      
+      const timeSkipBadge = document.createElement('div');
+      timeSkipBadge.className = "flex justify-center my-2 transition-all";
+      timeSkipBadge.innerHTML = `
+        <span class="bg-amber-100/95 border border-amber-300 text-amber-900 text-[10px] font-bold px-3 py-1 rounded-full shadow-xs flex items-center gap-1.5 animate-pulse">
+          <i class="fa-solid fa-hourglass-half text-amber-700"></i> Simulação: 1h30 sem resposta (CA.2.3.0)
+        </span>
+      `;
+      list.appendChild(timeSkipBadge);
+      scrollToBottom();
+
+      showTyping(true);
+
+      const delay = instant ? 150 : 400;
+
+      setTimeout(() => {
+        showTyping(false);
+
+        recordTracking(
+          'Cea na campanha quiz aniversario inatividade',
+          'Exibicao Inatividade 1h30',
+          'state: inatividade-1h30-265'
+        );
+
+        /* Distinct paragraph spacing with "comemoração continua" entirely bolded */
+        const inactivityHtml = `
+          <div class="space-y-2 text-xs text-slate-800 leading-relaxed border-l-2 border-amber-500 pl-2.5 py-0.5">
+            <span class="text-[9px] font-bold uppercase tracking-wider text-amber-700 bg-amber-100 px-1.5 py-0.5 rounded">
+              Lembrete de Inatividade
+            </span>
+            <p>A <b>comemoração continua</b> por aqui. Suas <b>escolhas também</b>. 🎉</p>
+            <p>Bora encontrar o look que faltava?</p>
+          </div>
+        `;
+
+        const inactivityButtonsHtml = `
+          <button onclick="handleReturnToCarousel()" class="wa-interactive-btn">
+            <i class="fa-solid fa-sparkles text-xs text-emerald-600"></i>
+            <span>Me mostra mais</span>
+          </button>
+        `;
+
+        appendInteractiveButtonsBotMessage(inactivityHtml, inactivityButtonsHtml);
+      }, delay);
+    }
+
+    function toggleAutoInactivityDemo() {
+      if (autoDemoInterval) {
+        clearInterval(autoDemoInterval);
+        resetAutoTimerButton();
+        return;
+      }
+
+      autoDemoSeconds = 5;
+      const btn = document.getElementById('btnAutoTimer');
+      const label = document.getElementById('autoTimerLabel');
+      
+      btn.classList.remove('bg-amber-500/20', 'text-amber-300');
+      btn.classList.add('bg-amber-500', 'text-slate-950', 'font-bold');
+      label.innerText = `Disparando em ${autoDemoSeconds}s...`;
+
+      autoDemoInterval = setInterval(() => {
+        autoDemoSeconds--;
+        if (autoDemoSeconds > 0) {
+          label.innerText = `Disparando em ${autoDemoSeconds}s...`;
+        } else {
+          clearInterval(autoDemoInterval);
+          resetAutoTimerButton();
+          triggerInactivityModal(true);
+        }
+      }, 1000);
+    }
+
+    function resetAutoTimerButton() {
+      autoDemoInterval = null;
+      const btn = document.getElementById('btnAutoTimer');
+      const label = document.getElementById('autoTimerLabel');
+      if (btn && label) {
+        btn.classList.remove('bg-amber-500', 'text-slate-950', 'font-bold');
+        btn.classList.add('bg-amber-500/20', 'text-amber-300', 'font-semibold');
+        label.innerText = 'Auto-Demo (5s)';
+      }
+    }
+
+    function handleReturnToCarousel() {
+      appendUserMessage("Me mostra mais");
+
+      recordTracking(
+        'Cea na campanha quiz aniversario retorno inatividade',
+        'Me mostra mais',
+        'Retornando para o carrossel de looks'
+      );
+
+      showTyping(true);
+
+      setTimeout(() => {
+        showTyping(false);
+        renderProductCarousel();
+      }, 400);
+    }
+
+    function resetFlow() {
+      closeFlowSheet();
+      clearInterval(autoDemoInterval);
+      resetAutoTimerButton();
+      trackingEventsList = [];
+      renderTrackingPanel();
+      startConversation();
+    }
+
+    function updateClock() {
+      const now = new Date();
+      const hours = String(now.getHours()).padStart(2, '0');
+      const minutes = String(now.getMinutes()).padStart(2, '0');
+      const el = document.getElementById('clockElement');
+      if (el) el.innerText = `${hours}:${minutes}`;
+    }
+
+    window.onload = function() {
+      updateClock();
+      setInterval(updateClock, 1000);
+      startConversation();
+    };
+  </script>
+
+</body>
+</html>
